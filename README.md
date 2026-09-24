@@ -1,13 +1,13 @@
-# ☁️ Cloud Computing Laboratory
+# Cloud Computing Laboratory
 
 ![Cloud Computing](https://img.shields.io/badge/Domain-Cloud%20Computing-blue)
 ![Virtualization](https://img.shields.io/badge/Topic-Virtualization-green)
 ![GitHub](https://img.shields.io/badge/Platform-GitHub-black)
 
-## 📌 Overview
+## Overview
 
 This repository contains the practical work and documentation completed
-as part of the **Cloud Computing Laboratory**.
+as part of the Cloud Computing Laboratory.
 
 The repository includes practical experiment screenshots related to
 cloud computing, virtualization, virtual machines, hypervisors, and
@@ -19,7 +19,7 @@ implementation.
 
 ---
 
-## 🎯 Objectives
+## Objectives
 
 The main objectives of this laboratory are:
 
@@ -34,7 +34,7 @@ The main objectives of this laboratory are:
 
 ---
 
-# ☁️ Introduction to Cloud Computing
+## Introduction to Cloud Computing
 
 Cloud Computing is a model for providing computing resources over a
 network on demand.
@@ -55,7 +55,7 @@ infrastructure themselves.
 
 ---
 
-# 🖥️ Virtualization
+## Virtualization
 
 Virtualization is a key technology used in modern cloud computing.
 
@@ -69,7 +69,7 @@ Each virtual machine can have its own:
 - Storage
 - Network configuration
 
-A **hypervisor** is responsible for creating and managing these virtual
+A hypervisor is responsible for creating and managing these virtual
 machines.
 
 ### Basic Virtualization Architecture
