@@ -4,40 +4,42 @@
 ![Virtualization](https://img.shields.io/badge/Topic-Virtualization-green)
 ![GitHub](https://img.shields.io/badge/Platform-GitHub-black)
 
-## 📌 About the Repository
+## 📌 Overview
 
-This repository contains the practical work and experimental screenshots
-completed as part of the **Cloud Computing Laboratory**.
+This repository contains the practical work and documentation completed
+as part of the **Cloud Computing Laboratory**.
 
-The repository documents hands-on activities related to cloud computing,
-virtualization, virtual machines, hypervisors, and cloud infrastructure.
+The repository includes practical experiment screenshots related to
+cloud computing, virtualization, virtual machines, hypervisors, and
+cloud infrastructure.
 
-The screenshots included in this repository provide a visual record of
-the laboratory experiments and configurations performed during the course.
+The purpose of this repository is to maintain a structured record of
+the laboratory activities and the concepts learned through practical
+implementation.
 
 ---
 
 ## 🎯 Objectives
 
-The main objectives of the Cloud Computing laboratory are:
+The main objectives of this laboratory are:
 
 - To understand the fundamentals of Cloud Computing.
-- To study virtualization and virtual machines.
-- To understand the role of hypervisors.
-- To explore cloud computing environments.
+- To understand virtualization and virtual machines.
+- To study different types of hypervisors.
+- To understand how cloud infrastructure uses virtualization.
 - To perform practical cloud computing experiments.
-- To understand resource allocation in virtual environments.
-- To observe and document experimental configurations.
-- To gain hands-on experience with cloud and virtualization technologies.
+- To understand virtual machine configuration and management.
+- To document practical experiments and observations.
+- To gain hands-on experience with cloud computing technologies.
 
 ---
 
 # ☁️ Introduction to Cloud Computing
 
-Cloud Computing is a computing model in which computing resources are
-provided over a network on demand.
+Cloud Computing is a model for providing computing resources over a
+network on demand.
 
-These resources can include:
+These resources may include:
 
 - Computing power
 - Storage
@@ -47,45 +49,40 @@ These resources can include:
 - Virtual machines
 - Development platforms
 
-Cloud computing reduces the need for users to maintain all computing
-infrastructure locally.
+Cloud computing allows users and organizations to access computing
+resources without having to maintain all the required physical
+infrastructure themselves.
 
 ---
 
 # 🖥️ Virtualization
 
-Virtualization is one of the fundamental technologies used in modern
-cloud computing.
+Virtualization is a key technology used in modern cloud computing.
 
-It allows a single physical machine to run multiple virtual machines.
+It allows a single physical computer to run multiple virtual machines.
 
 Each virtual machine can have its own:
 
 - Operating System
-- CPU resources
-- Memory
+- CPU allocation
+- RAM
 - Storage
 - Network configuration
 
-A software layer called a **hypervisor** manages the virtual machines.
+A **hypervisor** is responsible for creating and managing these virtual
+machines.
 
----
-
-# 🔹 Hypervisors
-
-A hypervisor is software that creates and manages virtual machines.
-
-There are two major types of hypervisors.
-
-## Type-1 Hypervisor
-
-A Type-1 hypervisor runs directly on the physical hardware.
+### Basic Virtualization Architecture
 
 ```text
-+---------------------------+
-|     Virtual Machines      |
-+---------------------------+
-|      Type-1 Hypervisor    |
-+---------------------------+
-|      Physical Hardware    |
-+---------------------------+
+        +----------------------+
+        |   Virtual Machine 1  |
+        +----------------------+
+        |   Virtual Machine 2  |
+        +----------------------+
+        |   Virtual Machine 3  |
+        +----------------------+
+        |       Hypervisor     |
+        +----------------------+
+        |   Physical Hardware  |
+        +----------------------+
