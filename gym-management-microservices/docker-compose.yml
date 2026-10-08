@@ -1,0 +1,47 @@
+services:
+
+  member-service:
+    build: ./member-service
+    container_name: gym-member-service
+    ports:
+      - "8001:8000"
+    volumes:
+      - member-db:/app/data
+    networks:
+      - gym-network
+
+  membership-service:
+    build: ./membership-service
+    container_name: gym-membership-service
+    ports:
+      - "8002:8000"
+    volumes:
+      - membership-db:/app/data
+    networks:
+      - gym-network
+
+  attendance-service:
+    build: ./attendance-service
+    container_name: gym-attendance-service
+    ports:
+      - "8003:8000"
+    environment:
+      - MEMBER_SERVICE_URL=http://member-service:8000
+      - MEMBERSHIP_SERVICE_URL=http://membership-service:8000
+    volumes:
+      - attendance-db:/app/data
+    networks:
+      - gym-network
+    depends_on:
+      - member-service
+      - membership-service
+
+
+volumes:
+  member-db:
+  membership-db:
+  attendance-db:
+
+networks:
+  gym-network:
+    driver: bridge
