@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Management Microservices - Enterprise Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                        bordercolor: '#334155'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .tab-btn.active { border-bottom: 3px solid #3b82f6; color: #60a5fa; font-weight: 600; }
+        .modal { transition: opacity 0.25s ease; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-cardbg border-b border-bordercolor sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg bg-brand-600 flex items-center justify-center text-white text-xl font-bold shadow-md shadow-brand-500/20">
+                        <i class="fa-solid fa-dumbbell"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white tracking-tight">GymPulse Enterprise Portal</h1>
+                        <p class="text-xs text-slate-400">Integrated Microservices • Automatic Active Membership Provisioning</p>
+                    </div>
+                </div>
+
+                <!-- Live Container Status Badges -->
+                <div class="hidden md:flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-bordercolor">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs text-slate-300 font-medium">Member:8001</span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-bordercolor">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs text-slate-300 font-medium">Membership:8002</span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-bordercolor">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs text-slate-300 font-medium">Attendance:8003</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex space-x-8 border-t border-slate-800 pt-1 text-sm font-medium text-slate-400">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active py-3 px-1 flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-line"></i><span>Overview</span>
+                </button>
+                <button onclick="switchTab('members')" id="tab-members" class="tab-btn py-3 px-1 flex items-center space-x-2">
+                    <i class="fa-solid fa-users"></i><span>Members Registry</span>
+                </button>
+                <button onclick="switchTab('memberships')" id="tab-memberships" class="tab-btn py-3 px-1 flex items-center space-x-2">
+                    <i class="fa-solid fa-id-card"></i><span>Memberships Registry</span>
+                </button>
+                <button onclick="switchTab('attendance')" id="tab-attendance" class="tab-btn py-3 px-1 flex items-center space-x-2">
+                    <i class="fa-solid fa-clipboard-user"></i><span>Attendance Gate</span>
+                </button>
+                <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn py-3 px-1 flex items-center space-x-2">
+                    <i class="fa-solid fa-gauge-high"></i><span>Performance Benchmarks</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col space-y-2"></div>
+
+        <!-- TAB 1: OVERVIEW DASHBOARD -->
+        <section id="view-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div class="bg-cardbg border border-bordercolor rounded-xl p-5 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Members</p>
+                        <h3 id="stat-total-members" class="text-3xl font-bold text-white mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="bg-cardbg border border-bordercolor rounded-xl p-5 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Memberships</p>
+                        <h3 id="stat-active-memberships" class="text-3xl font-bold text-emerald-400 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-certificate"></i>
+                    </div>
+                </div>
+                <div class="bg-cardbg border border-bordercolor rounded-xl p-5 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Check-Ins</p>
+                        <h3 id="stat-today-checkins" class="text-3xl font-bold text-indigo-400 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </div>
+                </div>
+                <div class="bg-cardbg border border-bordercolor rounded-xl p-5 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Currently Present</p>
+                        <h3 id="stat-currently-present" class="text-3xl font-bold text-amber-400 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-person-running"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inter-Service Checkin Quick Action & Recent Feed -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Quick Inter-Service Checkin Card -->
+                <div class="bg-cardbg border border-bordercolor rounded-xl p-6 shadow-md flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-bordercolor pb-3 mb-4">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-bolt text-amber-400"></i> Inter-Service Check-In Gate
+                            </h3>
+                            <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono">Port 8003</span>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-4">Select a member to perform an end-to-end check-in request across microservices.</p>
+                        
+                        <form id="quick-checkin-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Active Member</label>
+                                <select id="quick-member-select" class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2.5 text-slate-200 text-sm focus:outline-none focus:border-brand-500">
+                                    <option value="">No active members found</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-key"></i> Perform Check-In
+                            </button>
+                        </form>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-500">
+                        * Real database verification via Attendance Service
+                    </div>
+                </div>
+
+                <!-- Recent Attendance Activity Feed -->
+                <div class="lg:col-span-2 bg-cardbg border border-bordercolor rounded-xl p-6 shadow-md flex flex-col">
+                    <div class="flex items-center justify-between border-b border-bordercolor pb-3 mb-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-brand-400"></i> Real Database Activity Feed
+                        </h3>
+                        <button onclick="loadDashboardData()" class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                            <i class="fa-solid fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto max-h-80 pr-1">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-xs text-slate-400 uppercase bg-slate-900/50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2">ID</th>
+                                    <th class="px-3 py-2">Member ID</th>
+                                    <th class="px-3 py-2">Check-In Time</th>
+                                    <th class="px-3 py-2">Status</th>
+                                    <th class="px-3 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-attendance-rows" class="divide-y divide-slate-800 text-slate-300">
+                                <tr><td colspan="5" class="py-6 text-center text-slate-500">No attendance records found in real database.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 2: MEMBERS REGISTRY (WITH AUTOMATIC MEMBERSHIP PROVISIONING) -->
+        <section id="view-members" class="space-y-6 hidden">
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-6 shadow-md">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-bordercolor pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-users text-brand-400"></i> Members & Subscription Registry
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Registering a member automatically provisions an Active Membership plan</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="member-search" onkeyup="filterMembersTable()" placeholder="Search members..." class="bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500 w-48 sm:w-64">
+                        <button onclick="openAddMemberModal()" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-md shadow-brand-500/20 flex items-center gap-2 transition">
+                            <i class="fa-solid fa-user-plus"></i> Register Member & Plan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Members Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-900/80 border-b border-bordercolor">
+                            <tr>
+                                <th class="px-4 py-3">ID</th>
+                                <th class="px-4 py-3">Full Name</th>
+                                <th class="px-4 py-3">Age</th>
+                                <th class="px-4 py-3">Phone</th>
+                                <th class="px-4 py-3">Email</th>
+                                <th class="px-4 py-3">Active Plan</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-table-body" class="divide-y divide-slate-800 text-slate-200">
+                            <tr><td colspan="7" class="py-6 text-center text-slate-500">No members found in real database. Click "Register Member & Plan" above.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 3: MEMBERSHIPS REGISTRY -->
+        <section id="view-memberships" class="space-y-6 hidden">
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-6 shadow-md">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-bordercolor pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-id-card text-emerald-400"></i> Memberships Registry (Port 8002)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Manage Subscription Plans, Validity Dates & Statuses</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="openAddMembershipModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-2 transition">
+                            <i class="fa-solid fa-plus"></i> Add Plan Manually
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Memberships Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-900/80 border-b border-bordercolor">
+                            <tr>
+                                <th class="px-4 py-3">ID</th>
+                                <th class="px-4 py-3">Member ID</th>
+                                <th class="px-4 py-3">Plan</th>
+                                <th class="px-4 py-3">Start Date</th>
+                                <th class="px-4 py-3">End Date</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberships-table-body" class="divide-y divide-slate-800 text-slate-200">
+                            <tr><td colspan="7" class="py-6 text-center text-slate-500">No memberships found in database.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 4: ATTENDANCE GATE -->
+        <section id="view-attendance" class="space-y-6 hidden">
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-6 shadow-md">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-bordercolor pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-user text-indigo-400"></i> Real Attendance Records (Port 8003)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Live check-in and check-out logs from Attendance Service database</p>
+                    </div>
+                    <button onclick="loadAttendanceTable()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-1 border border-bordercolor">
+                        <i class="fa-solid fa-rotate"></i> Refresh Records
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-900/80 border-b border-bordercolor">
+                            <tr>
+                                <th class="px-4 py-3">Attendance ID</th>
+                                <th class="px-4 py-3">Member ID</th>
+                                <th class="px-4 py-3">Check-In Time</th>
+                                <th class="px-4 py-3">Check-Out Time</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body" class="divide-y divide-slate-800 text-slate-200">
+                            <tr><td colspan="6" class="py-6 text-center text-slate-500">No attendance logs found in database.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 5: WORKLOAD & BENCHMARKS -->
+        <section id="view-analytics" class="space-y-6 hidden">
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-6 shadow-md">
+                <div class="flex items-center justify-between border-b border-bordercolor pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high text-amber-400"></i> Measured Performance Charts (Checkpoints 4 & 5)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Graphs generated directly from measured microservice workloads</p>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-900 border border-bordercolor p-4 rounded-xl">
+                        <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-blue-400"></i> Response Time vs Concurrency (ms)
+                        </h4>
+                        <img src="chart_response_time.png" alt="Response Time Chart" class="w-full rounded-lg border border-slate-800">
+                    </div>
+                    <div class="bg-slate-900 border border-bordercolor p-4 rounded-xl">
+                        <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-emerald-400"></i> Throughput vs Concurrency (req/sec)
+                        </h4>
+                        <img src="chart_throughput.png" alt="Throughput Chart" class="w-full rounded-lg border border-slate-800">
+                    </div>
+                    <div class="bg-slate-900 border border-bordercolor p-4 rounded-xl">
+                        <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-microchip text-rose-400"></i> Container CPU Utilization (%)
+                        </h4>
+                        <img src="chart_cpu_utilization.png" alt="CPU Utilization Chart" class="w-full rounded-lg border border-slate-800">
+                    </div>
+                    <div class="bg-slate-900 border border-bordercolor p-4 rounded-xl">
+                        <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-memory text-purple-400"></i> Container Memory Utilization (MB)
+                        </h4>
+                        <img src="chart_memory_utilization.png" alt="Memory Utilization Chart" class="w-full rounded-lg border border-slate-800">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: REGISTER MEMBER WITH AUTOMATIC ACTIVE MEMBERSHIP -->
+    <div id="modal-add-member" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden modal">
+        <div class="bg-cardbg border border-bordercolor rounded-xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-bordercolor pb-3 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Register Member & Active Membership</h3>
+                    <p class="text-xs text-slate-400">Creates Member Profile & Provisions Active Membership Plan</p>
+                </div>
+                <button onclick="closeModal('modal-add-member')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-add-member" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1">Full Name</label>
+                        <input type="text" id="add-m-name" placeholder="Full name" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1">Age</label>
+                        <input type="number" id="add-m-age" placeholder="Age" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1">Phone Number</label>
+                        <input type="text" id="add-m-phone" placeholder="Phone number" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1">Email Address</label>
+                        <input type="email" id="add-m-email" placeholder="Email address" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-800 pt-3 mt-3">
+                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-certificate"></i> Membership Plan Provisioning</h4>
+                    <div class="grid grid-cols-3 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs text-slate-300 mb-1">Plan Tier</label>
+                            <select id="add-m-plan" class="w-full bg-slate-900 border border-bordercolor rounded-lg px-2.5 py-2 text-xs text-white focus:border-emerald-500">
+                                <option value="VIP_GOLD">VIP Gold</option>
+                                <option value="PREMIUM_SILVER">Premium Silver</option>
+                                <option value="BASIC">Basic</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-300 mb-1">Start Date</label>
+                            <input type="date" id="add-m-start" value="2026-01-01" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-2 py-2 text-xs text-white focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-300 mb-1">End Date</label>
+                            <input type="date" id="add-m-end" value="2026-12-31" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-2 py-2 text-xs text-white focus:border-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-3 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-member')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg shadow-emerald-600/30">
+                        <i class="fa-solid fa-check"></i> Register Member & Activate Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDIT MEMBER -->
+    <div id="modal-edit-member" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden modal">
+        <div class="bg-cardbg border border-bordercolor rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between border-b border-bordercolor pb-3 mb-4">
+                <h3 class="text-lg font-bold text-white">Edit Member Profile</h3>
+                <button onclick="closeModal('modal-edit-member')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-edit-member" class="space-y-4">
+                <input type="hidden" id="edit-m-id">
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Full Name</label>
+                    <input type="text" id="edit-m-name" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Age</label>
+                    <input type="number" id="edit-m-age" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Phone Number</label>
+                    <input type="text" id="edit-m-phone" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Email Address</label>
+                    <input type="email" id="edit-m-email" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-edit-member')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Update Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ADD MEMBERSHIP MANUALLY -->
+    <div id="modal-add-membership" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden modal">
+        <div class="bg-cardbg border border-bordercolor rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between border-b border-bordercolor pb-3 mb-4">
+                <h3 class="text-lg font-bold text-white">Create Membership Plan Manually</h3>
+                <button onclick="closeModal('modal-add-membership')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-add-membership" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Member ID</label>
+                    <input type="number" id="add-ms-member-id" placeholder="Enter Member ID" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Plan Tier</label>
+                    <select id="add-ms-plan" class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                        <option value="VIP_GOLD">VIP Gold</option>
+                        <option value="PREMIUM_SILVER">Premium Silver</option>
+                        <option value="BASIC">Basic</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Start Date</label>
+                    <input type="date" id="add-ms-start" value="2026-01-01" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">End Date</label>
+                    <input type="date" id="add-ms-end" value="2026-12-31" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-add-membership')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Save Membership</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: EDIT MEMBERSHIP -->
+    <div id="modal-edit-membership" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden modal">
+        <div class="bg-cardbg border border-bordercolor rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between border-b border-bordercolor pb-3 mb-4">
+                <h3 class="text-lg font-bold text-white">Update Membership Status</h3>
+                <button onclick="closeModal('modal-edit-membership')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-edit-membership" class="space-y-4">
+                <input type="hidden" id="edit-ms-member-id">
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Plan Tier</label>
+                    <select id="edit-ms-plan" class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                        <option value="VIP_GOLD">VIP Gold</option>
+                        <option value="PREMIUM_SILVER">Premium Silver</option>
+                        <option value="BASIC">Basic</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Start Date</label>
+                    <input type="date" id="edit-ms-start" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">End Date</label>
+                    <input type="date" id="edit-ms-end" required class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Status</label>
+                    <select id="edit-ms-status" class="w-full bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500">
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="EXPIRED">EXPIRED</option>
+                        <option value="SUSPENDED">SUSPENDED</option>
+                    </select>
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('modal-edit-membership')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- JavaScript Business Logic -->
+    <script>
+        const MEMBER_URL = 'http://localhost:8001';
+        const MEMBERSHIP_URL = 'http://localhost:8002';
+        const ATTENDANCE_URL = 'http://localhost:8003';
+
+        let membersList = [];
+        let membershipsList = [];
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+
+            if (tabId === 'members') loadMembersTable();
+            if (tabId === 'memberships') loadMembershipsTable();
+            if (tabId === 'attendance') loadAttendanceTable();
+            if (tabId === 'dashboard') loadDashboardData();
+        }
+
+        // Toast System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : 'bg-rose-600';
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation';
+
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-lg shadow-xl text-sm font-medium flex items-center space-x-2 transition-all duration-300 transform translate-x-5 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-x-5', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Modals Helper
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Dashboard Initial Load
+        async function loadDashboardData() {
+            try {
+                const [resM, resMS, resA] = await Promise.all([
+                    fetch(`${MEMBER_URL}/members`),
+                    fetch(`${MEMBERSHIP_URL}/memberships`),
+                    fetch(`${ATTENDANCE_URL}/attendance`)
+                ]);
+
+                membersList = await resM.json();
+                membershipsList = await resMS.json();
+                const attendanceList = await resA.json();
+
+                document.getElementById('stat-total-members').textContent = membersList.length;
+                document.getElementById('stat-active-memberships').textContent = membershipsList.filter(m => m.status === 'ACTIVE').length;
+                document.getElementById('stat-today-checkins').textContent = attendanceList.length;
+                document.getElementById('stat-currently-present').textContent = attendanceList.filter(a => a.status === 'PRESENT').length;
+
+                // Populate Quick Check-in Select
+                const select = document.getElementById('quick-member-select');
+                select.innerHTML = membersList.length ? '' : '<option value="">No members found (Register member first)</option>';
+                membersList.forEach(m => {
+                    const ms = membershipsList.find(x => x.member_id === m.id);
+                    const planInfo = ms ? `[${ms.plan} - ${ms.status}]` : '[No Plan]';
+                    select.innerHTML += `<option value="${m.id}">${m.name} (ID: ${m.id}) ${planInfo}</option>`;
+                });
+
+                // Populate Recent Activity Table
+                const rows = document.getElementById('recent-attendance-rows');
+                rows.innerHTML = '';
+                if (!attendanceList.length) {
+                    rows.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">No attendance records found in real database.</td></tr>`;
+                    return;
+                }
+                attendanceList.slice(0, 10).forEach(a => {
+                    const badgeColor = a.status === 'PRESENT' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300';
+                    const checkoutBtn = a.status === 'PRESENT' 
+                        ? `<button onclick="checkoutAttendance(${a.attendance_id})" class="text-xs bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1 rounded">Check Out</button>`
+                        : `<span class="text-xs text-slate-500">Completed</span>`;
+
+                    rows.innerHTML += `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="px-3 py-2.5 font-mono text-xs">#${a.attendance_id}</td>
+                            <td class="px-3 py-2.5">Member #${a.member_id}</td>
+                            <td class="px-3 py-2.5 text-xs text-slate-400">${a.check_in}</td>
+                            <td class="px-3 py-2.5"><span class="text-xs px-2 py-0.5 rounded ${badgeColor}">${a.status}</span></td>
+                            <td class="px-3 py-2.5 text-right">${checkoutBtn}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (err) {
+                console.error(err);
+                showToast('Unable to connect to microservices', 'error');
+            }
+        }
+
+        // Quick Inter-Service Checkin
+        document.getElementById('quick-checkin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const memberId = document.getElementById('quick-member-select').value;
+            if (!memberId) {
+                showToast('Please register a member first', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${ATTENDANCE_URL}/attendance/checkin?member_id=${memberId}`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`Check-In Approved for ${data.member_name} (${data.membership_plan})`);
+                    loadDashboardData();
+                } else {
+                    showToast(data.detail || 'Check-in rejected', 'error');
+                }
+            } catch (err) {
+                showToast('Inter-service request failed', 'error');
+            }
+        });
+
+        // MEMBERS CRUD LOGIC & AUTOMATIC ACTIVE MEMBERSHIP PROVISIONING
+        async function loadMembersTable() {
+            const body = document.getElementById('members-table-body');
+            body.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Loading real data...</td></tr>`;
+
+            try {
+                const [resM, resMS] = await Promise.all([
+                    fetch(`${MEMBER_URL}/members`),
+                    fetch(`${MEMBERSHIP_URL}/memberships`)
+                ]);
+                membersList = await resM.json();
+                membershipsList = await resMS.json();
+
+                body.innerHTML = '';
+                if (!membersList.length) {
+                    body.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">No members found in real database. Click "Register Member & Plan" to insert one.</td></tr>`;
+                    return;
+                }
+
+                membersList.forEach(m => {
+                    const ms = membershipsList.find(x => x.member_id === m.id);
+                    const planBadge = ms 
+                        ? `<span class="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded font-semibold">${ms.plan} (${ms.status})</span>`
+                        : `<span class="bg-rose-500/20 text-rose-300 text-xs px-2.5 py-1 rounded">No Membership</span>`;
+
+                    body.innerHTML += `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="px-4 py-3 font-mono text-xs text-slate-400">#${m.id}</td>
+                            <td class="px-4 py-3 font-semibold text-white">${m.name}</td>
+                            <td class="px-4 py-3">${m.age} yrs</td>
+                            <td class="px-4 py-3 text-xs font-mono text-slate-300">${m.phone}</td>
+                            <td class="px-4 py-3 text-xs text-slate-400">${m.email}</td>
+                            <td class="px-4 py-3">${planBadge}</td>
+                            <td class="px-4 py-3 text-right space-x-2">
+                                <button onclick="openEditMemberModal(${m.id}, '${m.name}', ${m.age}, '${m.phone}', '${m.email}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-brand-400 px-3 py-1.5 rounded border border-bordercolor">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </button>
+                                <button onclick="deleteMember(${m.id})" class="text-xs bg-rose-950/60 hover:bg-rose-900 text-rose-300 px-3 py-1.5 rounded border border-rose-800/50">
+                                    <i class="fa-solid fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { showToast('Failed to fetch members list', 'error'); }
+        }
+
+        function filterMembersTable() {
+            const term = document.getElementById('member-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#members-table-body tr');
+            rows.forEach(r => {
+                const text = r.textContent.toLowerCase();
+                r.style.display = text.includes(term) ? '' : 'none';
+            });
+        }
+
+        function openAddMemberModal() { openModal('modal-add-member'); }
+        
+        // DUAL PROVISIONING: Register Member + Automatically Create Active Membership
+        document.getElementById('form-add-member').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('add-m-name').value;
+            const age = document.getElementById('add-m-age').value;
+            const phone = document.getElementById('add-m-phone').value;
+            const email = document.getElementById('add-m-email').value;
+
+            const plan = document.getElementById('add-m-plan').value;
+            const start = document.getElementById('add-m-start').value;
+            const end = document.getElementById('add-m-end').value;
+
+            try {
+                // 1. Create Member Profile
+                const resM = await fetch(`${MEMBER_URL}/members?name=${encodeURIComponent(name)}&age=${age}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`, { method: 'POST' });
+                const dataM = await resM.json();
+
+                if (resM.ok && dataM.member_id) {
+                    const newMemberId = dataM.member_id;
+
+                    // 2. Automatically Create Active Membership Plan for newMemberId
+                    const resMS = await fetch(`${MEMBERSHIP_URL}/memberships?member_id=${newMemberId}&plan=${encodeURIComponent(plan)}&start_date=${start}&end_date=${end}`, { method: 'POST' });
+
+                    if (resMS.ok) {
+                        showToast(`Registered ${name} & Activated ${plan} Plan (Member #${newMemberId})`);
+                    } else {
+                        showToast(`Member created, but membership creation returned error`, 'warning');
+                    }
+
+                    closeModal('modal-add-member');
+                    document.getElementById('form-add-member').reset();
+                    loadDashboardData();
+                    if (!document.getElementById('view-members').classList.contains('hidden')) loadMembersTable();
+
+                } else {
+                    showToast('Failed to save member profile', 'error');
+                }
+            } catch (err) { showToast('Error processing registration', 'error'); }
+        });
+
+        function openEditMemberModal(id, name, age, phone, email) {
+            document.getElementById('edit-m-id').value = id;
+            document.getElementById('edit-m-name').value = name;
+            document.getElementById('edit-m-age').value = age;
+            document.getElementById('edit-m-phone').value = phone;
+            document.getElementById('edit-m-email').value = email;
+            openModal('modal-edit-member');
+        }
+
+        document.getElementById('form-edit-member').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-m-id').value;
+            const name = document.getElementById('edit-m-name').value;
+            const age = document.getElementById('edit-m-age').value;
+            const phone = document.getElementById('edit-m-phone').value;
+            const email = document.getElementById('edit-m-email').value;
+
+            try {
+                const res = await fetch(`${MEMBER_URL}/members/${id}?name=${encodeURIComponent(name)}&age=${age}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`, { method: 'PUT' });
+                if (res.ok) {
+                    showToast('Member profile updated!');
+                    closeModal('modal-edit-member');
+                    loadMembersTable();
+                } else { showToast('Failed to update member', 'error'); }
+            } catch (err) { showToast('Error updating member', 'error'); }
+        });
+
+        async function deleteMember(id) {
+            if (!confirm(`Delete Member #${id} and associated records?`)) return;
+            try {
+                await fetch(`${MEMBERSHIP_URL}/memberships/${id}`, { method: 'DELETE' }).catch(() => {});
+                const res = await fetch(`${MEMBER_URL}/members/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast(`Member #${id} and plan removed`);
+                    loadDashboardData();
+                    loadMembersTable();
+                } else { showToast('Failed to delete member', 'error'); }
+            } catch (err) { showToast('Error deleting member', 'error'); }
+        }
+
+
+        // MEMBERSHIPS CRUD LOGIC
+        async function loadMembershipsTable() {
+            const body = document.getElementById('memberships-table-body');
+            body.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Loading real data...</td></tr>`;
+
+            try {
+                const res = await fetch(`${MEMBERSHIP_URL}/memberships`);
+                membershipsList = await res.json();
+
+                body.innerHTML = '';
+                if (!membershipsList.length) {
+                    body.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">No active memberships found in database.</td></tr>`;
+                    return;
+                }
+
+                membershipsList.forEach(ms => {
+                    const badge = ms.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300';
+                    body.innerHTML += `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="px-4 py-3 font-mono text-xs text-slate-400">#${ms.membership_id}</td>
+                            <td class="px-4 py-3 font-semibold text-white">Member #${ms.member_id}</td>
+                            <td class="px-4 py-3"><span class="bg-blue-500/20 text-blue-300 text-xs px-2.5 py-1 rounded font-semibold">${ms.plan}</span></td>
+                            <td class="px-4 py-3 text-xs text-slate-400">${ms.start_date}</td>
+                            <td class="px-4 py-3 text-xs text-slate-400">${ms.end_date}</td>
+                            <td class="px-4 py-3"><span class="text-xs px-2.5 py-1 rounded font-bold ${badge}">${ms.status}</span></td>
+                            <td class="px-4 py-3 text-right space-x-2">
+                                <button onclick="openEditMembershipModal(${ms.member_id}, '${ms.plan}', '${ms.start_date}', '${ms.end_date}', '${ms.status}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3 py-1.5 rounded border border-bordercolor">
+                                    <i class="fa-solid fa-pen"></i> Update
+                                </button>
+                                <button onclick="deleteMembership(${ms.member_id})" class="text-xs bg-rose-950/60 hover:bg-rose-900 text-rose-300 px-3 py-1.5 rounded border border-rose-800/50">
+                                    <i class="fa-solid fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { showToast('Failed to load memberships', 'error'); }
+        }
+
+        function openAddMembershipModal() { openModal('modal-add-membership'); }
+        document.getElementById('form-add-membership').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const memberId = document.getElementById('add-ms-member-id').value;
+            const plan = document.getElementById('add-ms-plan').value;
+            const start = document.getElementById('add-ms-start').value;
+            const end = document.getElementById('add-ms-end').value;
+
+            try {
+                const res = await fetch(`${MEMBERSHIP_URL}/memberships?member_id=${memberId}&plan=${encodeURIComponent(plan)}&start_date=${start}&end_date=${end}`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Membership created!');
+                    closeModal('modal-add-membership');
+                    document.getElementById('form-add-membership').reset();
+                    loadDashboardData();
+                    loadMembershipsTable();
+                } else {
+                    showToast(data.detail || 'Error creating membership', 'error');
+                }
+            } catch (err) { showToast('Error creating membership', 'error'); }
+        });
+
+        function openEditMembershipModal(memberId, plan, start, end, status) {
+            document.getElementById('edit-ms-member-id').value = memberId;
+            document.getElementById('edit-ms-plan').value = plan;
+            document.getElementById('edit-ms-start').value = start;
+            document.getElementById('edit-ms-end').value = end;
+            document.getElementById('edit-ms-status').value = status;
+            openModal('modal-edit-membership');
+        }
+
+        document.getElementById('form-edit-membership').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const memberId = document.getElementById('edit-ms-member-id').value;
+            const plan = document.getElementById('edit-ms-plan').value;
+            const start = document.getElementById('edit-ms-start').value;
+            const end = document.getElementById('edit-ms-end').value;
+            const status = document.getElementById('edit-ms-status').value;
+
+            try {
+                const res = await fetch(`${MEMBERSHIP_URL}/memberships/${memberId}?plan=${encodeURIComponent(plan)}&start_date=${start}&end_date=${end}&status=${status}`, { method: 'PUT' });
+                if (res.ok) {
+                    showToast('Membership status updated!');
+                    closeModal('modal-edit-membership');
+                    loadDashboardData();
+                    loadMembershipsTable();
+                } else { showToast('Failed to update membership', 'error'); }
+            } catch (err) { showToast('Error updating membership', 'error'); }
+        });
+
+        async function deleteMembership(memberId) {
+            if (!confirm(`Delete Membership for Member #${memberId}?`)) return;
+            try {
+                const res = await fetch(`${MEMBERSHIP_URL}/memberships/${memberId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast(`Membership deleted`);
+                    loadDashboardData();
+                    loadMembershipsTable();
+                } else { showToast('Failed to delete membership', 'error'); }
+            } catch (err) { showToast('Error deleting membership', 'error'); }
+        }
+
+
+        // ATTENDANCE LOGIC
+        async function loadAttendanceTable() {
+            const body = document.getElementById('attendance-table-body');
+            body.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">Loading real data...</td></tr>`;
+
+            try {
+                const res = await fetch(`${ATTENDANCE_URL}/attendance`);
+                const list = await res.json();
+
+                body.innerHTML = '';
+                if (!list.length) {
+                    body.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">No attendance records found in real database.</td></tr>`;
+                    return;
+                }
+
+                list.forEach(a => {
+                    const badge = a.status === 'PRESENT' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300';
+                    const checkoutBtn = a.status === 'PRESENT'
+                        ? `<button onclick="checkoutAttendance(${a.attendance_id})" class="text-xs bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1 rounded">Check Out</button>`
+                        : `<span class="text-xs text-slate-500">Completed</span>`;
+
+                    body.innerHTML += `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="px-4 py-3 font-mono text-xs text-slate-400">#${a.attendance_id}</td>
+                            <td class="px-4 py-3 font-semibold text-white">Member #${a.member_id}</td>
+                            <td class="px-4 py-3 text-xs text-slate-300 font-mono">${a.check_in}</td>
+                            <td class="px-4 py-3 text-xs text-slate-400 font-mono">${a.check_out || '—'}</td>
+                            <td class="px-4 py-3"><span class="text-xs px-2.5 py-1 rounded font-bold ${badge}">${a.status}</span></td>
+                            <td class="px-4 py-3 text-right space-x-2">
+                                ${checkoutBtn}
+                                <button onclick="deleteAttendanceRecord(${a.attendance_id})" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { showToast('Failed to load attendance logs', 'error'); }
+        }
+
+        async function checkoutAttendance(attendanceId) {
+            try {
+                const res = await fetch(`${ATTENDANCE_URL}/attendance/checkout/${attendanceId}`, { method: 'POST' });
+                if (res.ok) {
+                    showToast(`Member checked out`);
+                    loadDashboardData();
+                    if (!document.getElementById('view-attendance').classList.contains('hidden')) loadAttendanceTable();
+                } else { showToast('Failed to check out member', 'error'); }
+            } catch (err) { showToast('Error checking out', 'error'); }
+        }
+
+        async function deleteAttendanceRecord(attendanceId) {
+            if (!confirm(`Delete attendance record #${attendanceId}?`)) return;
+            try {
+                const res = await fetch(`${ATTENDANCE_URL}/attendance/${attendanceId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast(`Record #${attendanceId} deleted`);
+                    loadAttendanceTable();
+                } else { showToast('Failed to delete attendance record', 'error'); }
+            } catch (err) { showToast('Error deleting attendance record', 'error'); }
+        }
+
+        // Init Load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>
